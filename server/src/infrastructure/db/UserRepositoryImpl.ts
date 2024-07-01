@@ -1,10 +1,11 @@
+import { Error } from '../../core/entity/Error.entity';
 import { User } from '../../core/entity/User.entity';
 import { UserRepository } from '../../core/repository/UserRepository';
 import { getDatabase } from '../../middleware/MongoDB';
 import { ObjectId } from 'mongodb'; // Import ObjectId for querying by _id
 
 export class UserRepositoryImpl implements UserRepository {
-  private collection = getDatabase().collection('users');
+  private collection = getDatabase().collection('Users');
 
   async save(user: User): Promise<void> {
     await this.collection.insertOne(user);
@@ -17,12 +18,32 @@ export class UserRepositoryImpl implements UserRepository {
       return null;
     }
 
-    // Map MongoDB document to User entity
+
     const user: User = {
-      id: userDocument._id.toString(), // Assuming id is stored as string in your User entity
-      name: userDocument.name, // Adjust as per your User entity structure
+      id: userDocument._id.toString(), 
+      name: userDocument.name,
+      userName: userDocument.userName,
     };
 
     return user;
+  }
+
+  async getAllUsers(): Promise<User> {
+  const userDocument = await  this.collection.find({}).toArray();
+  // console.log(userDocument);
+
+    let user!:User;
+
+    userDocument.forEach(function (value){
+      user = {
+        id: value['_id'].toString(), 
+        name: value['name'], 
+        userName: value['userName']
+      };
+
+    });
+
+
+      return user;
   }
 }

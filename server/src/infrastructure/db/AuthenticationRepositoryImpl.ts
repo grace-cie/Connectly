@@ -4,10 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getDatabase } from '../../middleware/MongoDB';
 import { ObjectId } from 'mongodb'; // Import ObjectId for querying by _id
+import { User } from '../../core/entity/User.entity';
 
 export class AuthenticationRepositoryImpl implements AuthenticationRepository {
   private collection = getDatabase().collection('Users');
-
+ 
   async login(loginDto: LoginDto): Promise<any> {
     const userName = loginDto.username;
     const password = loginDto.password;

@@ -1,0 +1,7 @@
+FROM node:slim
+ENV NODE_ENV development
+WORKDIR /connectly
+COPY . .
+RUN npm install
+CMD [ "ts-node", "src/index.ts" ]
+EXPOSE 3000
