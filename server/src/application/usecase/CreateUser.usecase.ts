@@ -1,5 +1,5 @@
-import { User } from '../../core/entity/User.entity';
-import { UserRepository } from '../../core/repository/UserRepository';
+import { User } from "../../core/entity/User.entity";
+import { UserRepository } from "../../core/repository/UserRepository";
 
 export class CreateUserUsecase {
   constructor(private userRepository: UserRepository) {}
