@@ -1,5 +1,5 @@
-import { LoginDto } from '../../core/dto/Login.dto';
-import { AuthenticationRepository } from '../../core/repository/AuthenticationRepository';
+import { LoginDto } from "../../core/dto/Login.dto";
+import { AuthenticationRepository } from "../../core/repository/AuthenticationRepository";
 
 export class LoginUserUsecase {
   constructor(private authenticationRepository: AuthenticationRepository) {}
