@@ -17,9 +17,11 @@ import { UserRepositoryImpl } from "./infrastructure/db/UserRepositoryImpl";
 import { AuthenticationRepositoryImpl } from "./infrastructure/db/AuthenticationRepositoryImpl";
 import { GetUsersUsecase } from "./application/usecase/GetUsers.usecase";
 
+/// initaialize env's
+dotenv.config();
+
 const app = express();
 const port = process.env.PORT;
-dotenv.config();
 
 // Connect to MongoDB
 connectToDatabase().catch(console.error);
@@ -50,8 +52,8 @@ app.use(bodyParser.json());
 app.get("/", (req, res) => {
   res.send("Welcome to Connectly");
 });
-app.post("/login", (req, res) => loginController.create(req, res));
-app.post("/createuser", (req, res) => userController.create(req, res));
+app.post("/login", (req, res) => loginController.login(req, res));
+app.post("/registerUser", (req, res) => userController.registerUser(req, res));
 app.get("/getUsers", (req, res) => userController.getUsers(req, res));
 
 // Start server
