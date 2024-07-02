@@ -1,7 +1,8 @@
+import { RegisterUserDto } from "../dto/RegisterUser.dto";
 import { User } from "../entity/User.entity";
 
 export interface UserRepository {
-  save(user: User): Promise<void>;
+  registerUser(newUserData: RegisterUserDto): Promise<void>;
   findById(id: string): Promise<User | null>;
   getAllUsers(): Promise<User>;
 }

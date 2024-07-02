@@ -1,12 +1,17 @@
 import { Request, Response } from "express";
 import { LoginUserUsecase } from "../../application/usecase/LoginUser.usecase";
+import { LoginDto } from "../../core/dto/Login.dto";
 
 export class LoginController {
   constructor(private usecase: LoginUserUsecase) {}
 
-  async create(req: Request, res: Response): Promise<void> {
-    const { id, name } = req.body;
-    await this.usecase.execute(id, name);
-    res.status(201).send({ message: "Logged" });
+  async login(req: Request, res: Response): Promise<void> {
+    const { userName, password } = req.body;
+    const result = await this.usecase.execute({
+      userName: userName,
+      password: password,
+    });
+
+    res.status(result.statusCode).json({ data: result });
   }
 }
