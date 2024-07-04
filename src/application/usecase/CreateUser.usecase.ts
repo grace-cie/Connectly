@@ -1,5 +1,5 @@
 import { RegisterUserDto } from "../../core/dto/RegisterUser.dto";
-import { User } from "../../core/entity/User.entity";
+import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { UserRepository } from "../../core/repository/UserRepository";
 
 export class CreateUserUsecase {
@@ -13,8 +13,9 @@ export class CreateUserUsecase {
     name: string;
     userName: string;
     password: string;
-  }): Promise<void> {
+  }): Promise<string | ErrorResponse> {
     const newUserData = new RegisterUserDto(name, userName, password);
-    await this.userRepository.registerUser(newUserData);
+    const result = await this.userRepository.registerUser(newUserData);
+    return result;
   }
 }

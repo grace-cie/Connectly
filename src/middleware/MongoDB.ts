@@ -1,9 +1,11 @@
 import { MongoClient, Db } from "mongodb";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 let db: Db;
 
-const uri =
-  "mongodb+srv://rirei1415:09232309731rey@connectlycluster.ouevlrt.mongodb.net/?retryWrites=true&w=majority&appName=ConnectlyCluster";
+const uri = `${process.env.MONGO_DB_URI}`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 
 export const connectToDatabase = async () => {

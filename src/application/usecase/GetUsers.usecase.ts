@@ -5,6 +5,7 @@ export class GetUsersUsecase {
   constructor(private userRepository: UserRepository) {}
 
   async execute(): Promise<any> {
-    return await this.userRepository.getAllUsers();
+    const result = await this.userRepository.getAllUsers();
+    return result;
   }
 }

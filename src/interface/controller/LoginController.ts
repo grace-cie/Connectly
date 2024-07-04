@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { LoginUserUsecase } from "../../application/usecase/LoginUser.usecase";
-import { LoginDto } from "../../core/dto/Login.dto";
 
 export class LoginController {
   constructor(private usecase: LoginUserUsecase) {}
