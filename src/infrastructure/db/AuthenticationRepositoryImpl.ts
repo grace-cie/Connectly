@@ -3,8 +3,6 @@ import { AuthenticationRepository } from "../../core/repository/AuthenticationRe
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getDatabase } from "../../middleware/MongoDB";
-import { ObjectId } from "mongodb"; // Import ObjectId for querying by _id
-import { User } from "../../core/entity/User.entity";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { LoggedDataEntity } from "../../core/entity/LoggedData.entity";
 
@@ -17,10 +15,8 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
 
     try {
       let errorResponse!: ErrorResponse;
-      console.log(`xxxxx ${userName ?? "sdsd"}`);
-      const user = await this.collection.findOne({ userName });
 
-      console.log(`reeeeesss ${user ?? "sdsd"}`);
+      const user = await this.collection.findOne({ userName });
 
       if (!user || !user.password) {
         errorResponse = {
@@ -29,7 +25,6 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
         };
 
         return errorResponse;
-        // return { statusCode: 401, message: "Invalid credentials" };
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -39,14 +34,13 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
       if (!isPasswordValid) {
         errorResponse = {
           statusCode: 401,
-          errorMessage: "Invalid credentials",
+          errorMessage: "Wrong password",
         };
         return errorResponse;
-        // return { statusCode: 401, message: "Invalid credentials" };
       }
 
       const token = jwt.sign(
-        { id: user.id, username: user.username },
+        { username: userName },
         process.env.ACCESS_TOKEN_SECRET || "defaultsecret",
         {
           expiresIn: "1h",
@@ -54,7 +48,7 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
       );
 
       const loggeData: LoggedDataEntity = {
-        statusCode: 201,
+        statusCode: 200,
         token: token,
       };
       return loggeData;
@@ -65,7 +59,6 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
       };
 
       return errorResponse;
-      // return { statusCode: 500, message: "Internal server error" };
     }
   }
 }

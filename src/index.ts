@@ -16,6 +16,7 @@ import { LoginUserUsecase } from "./application/usecase/LoginUser.usecase";
 import { UserRepositoryImpl } from "./infrastructure/db/UserRepositoryImpl";
 import { AuthenticationRepositoryImpl } from "./infrastructure/db/AuthenticationRepositoryImpl";
 import { GetUsersUsecase } from "./application/usecase/GetUsers.usecase";
+import { authenticateToken } from "./middleware/AuthenticateToken";
 
 /// initaialize env's
 dotenv.config();
@@ -54,7 +55,9 @@ app.get("/", (req, res) => {
 });
 app.post("/login", (req, res) => loginController.login(req, res));
 app.post("/registerUser", (req, res) => userController.registerUser(req, res));
-app.get("/getUsers", (req, res) => userController.getUsers(req, res));
+app.get("/getUsers", authenticateToken, (req, res) =>
+  userController.getUsers(req, res)
+);
 
 // Start server
 app.listen(port, () => {
