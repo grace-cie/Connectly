@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { LoginUserUsecase } from "../../application/usecase/LoginUser.usecase";
+import { LoginUserUsecase } from "../../usecase/LoginUser.usecase";
 
 export class LoginController {
   constructor(private usecase: LoginUserUsecase) {}

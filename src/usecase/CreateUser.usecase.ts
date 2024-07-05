@@ -1,6 +1,6 @@
-import { RegisterUserDto } from "../../core/dto/RegisterUser.dto";
-import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
-import { UserRepository } from "../../core/repository/UserRepository";
+import { RegisterUserDto } from "../core/dto/RegisterUser.dto";
+import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
+import { UserRepository } from "../core/repository/UserRepository";
 
 export class CreateUserUsecase {
   constructor(private userRepository: UserRepository) {}
