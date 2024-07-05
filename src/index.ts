@@ -9,13 +9,13 @@ import { UserController } from "./interface/controller/UserController";
 import { LoginController } from "./interface/controller/LoginController";
 
 /// [usecases imports]
-import { CreateUserUsecase } from "./application/usecase/CreateUser.usecase";
-import { LoginUserUsecase } from "./application/usecase/LoginUser.usecase";
+import { CreateUserUsecase } from "./usecase/CreateUser.usecase";
+import { LoginUserUsecase } from "./usecase/LoginUser.usecase";
 
 /// [repository implementation imports]
-import { UserRepositoryImpl } from "./infrastructure/db/UserRepositoryImpl";
-import { AuthenticationRepositoryImpl } from "./infrastructure/db/AuthenticationRepositoryImpl";
-import { GetUsersUsecase } from "./application/usecase/GetUsers.usecase";
+import { UserRepositoryImpl } from "./infrastructure/repository/UserRepositoryImpl";
+import { AuthenticationRepositoryImpl } from "./infrastructure/repository/AuthenticationRepositoryImpl";
+import { GetUsersUsecase } from "./usecase/GetUsers.usecase";
 import { authenticateToken } from "./middleware/AuthenticateToken";
 
 /// initaialize env's

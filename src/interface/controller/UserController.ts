@@ -1,7 +1,7 @@
 import Joi from "joi";
 import { Request, Response } from "express";
-import { CreateUserUsecase } from "../../application/usecase/CreateUser.usecase";
-import { GetUsersUsecase } from "../../application/usecase/GetUsers.usecase";
+import { CreateUserUsecase } from "../../usecase/CreateUser.usecase";
+import { GetUsersUsecase } from "../../usecase/GetUsers.usecase";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 
 export class UserController {
