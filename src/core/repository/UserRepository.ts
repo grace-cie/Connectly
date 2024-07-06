@@ -1,4 +1,4 @@
-import { RegisterUserDto } from "../dto/RegisterUser.dto";
+import { RegisterUserDto } from "../dto/Auth/RegisterUser.dto";
 import { ErrorResponse } from "../entity/ErrorRespose.entity";
 import { User } from "../entity/User.entity";
 

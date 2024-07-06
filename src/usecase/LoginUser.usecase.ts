@@ -1,4 +1,4 @@
-import { LoginDto } from "../core/dto/Login.dto";
+import { LoginDto } from "../core/dto/Auth/Login.dto";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
 import { LoggedDataEntity } from "../core/entity/LoggedData.entity";
 import { AuthenticationRepository } from "../core/repository/AuthenticationRepository";
