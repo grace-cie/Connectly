@@ -1,4 +1,4 @@
-import { RegisterUserDto } from "../../core/dto/RegisterUser.dto";
+import { RegisterUserDto } from "../../core/dto/Auth/RegisterUser.dto";
 import bcrypt from "bcryptjs";
 import { User } from "../../core/entity/User.entity";
 import { UserRepository } from "../../core/repository/UserRepository";
@@ -7,14 +7,14 @@ import { ObjectId } from "mongodb"; // Import ObjectId for querying by _id
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 
 export class UserRepositoryImpl implements UserRepository {
-  private collection = getDatabase().collection("Users");
+  private userCollection = getDatabase().collection("Users");
 
   async registerUser(
     newUserData: RegisterUserDto
   ): Promise<string | ErrorResponse> {
     let errorResponse!: ErrorResponse;
 
-    const existingUser = await this.collection.findOne({
+    const existingUser = await this.userCollection.findOne({
       userName: newUserData.userName,
     });
 
@@ -35,12 +35,12 @@ export class UserRepositoryImpl implements UserRepository {
       password: hashedPassword,
     };
 
-    await this.collection.insertOne(completeUserData);
+    await this.userCollection.insertOne(completeUserData);
     return "created";
   }
 
   async findById(id: string): Promise<User | null> {
-    const userDocument = await this.collection.findOne({
+    const userDocument = await this.userCollection.findOne({
       _id: new ObjectId(id),
     });
 
@@ -58,7 +58,7 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async getAllUsers(): Promise<User[]> {
-    const userDocument = await this.collection.find({}).toArray();
+    const userDocument = await this.userCollection.find({}).toArray();
 
     let user!: User[];
 

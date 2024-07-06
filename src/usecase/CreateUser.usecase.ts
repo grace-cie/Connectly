@@ -1,4 +1,4 @@
-import { RegisterUserDto } from "../core/dto/RegisterUser.dto";
+import { RegisterUserDto } from "../core/dto/Auth/RegisterUser.dto";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
 import { UserRepository } from "../core/repository/UserRepository";
 

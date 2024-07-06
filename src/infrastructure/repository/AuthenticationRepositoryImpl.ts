@@ -1,13 +1,15 @@
-import { LoginDto } from "../../core/dto/Login.dto";
+import { LoginDto } from "../../core/dto/Auth/Login.dto";
 import { AuthenticationRepository } from "../../core/repository/AuthenticationRepository";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { getDatabase } from "../../middleware/MongoDB";
+import { ObjectId } from "mongodb";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { LoggedDataEntity } from "../../core/entity/LoggedData.entity";
+import { User } from "../../core/entity/User.entity";
 
 export class AuthenticationRepositoryImpl implements AuthenticationRepository {
-  private collection = getDatabase().collection("Users");
+  private userCollection = getDatabase().collection("Users");
 
   async login(loginDto: LoginDto): Promise<LoggedDataEntity | ErrorResponse> {
     const userName = loginDto.userName;
@@ -16,7 +18,7 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
     try {
       let errorResponse!: ErrorResponse;
 
-      const user = await this.collection.findOne({ userName });
+      const user = await this.userCollection.findOne({ userName });
 
       if (!user || !user.password) {
         errorResponse = {
@@ -28,8 +30,6 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
-
-      console.log(`pass valid ${isPasswordValid}`);
 
       if (!isPasswordValid) {
         errorResponse = {
@@ -47,9 +47,28 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
         }
       );
 
+      const userDocument = await this.userCollection.findOne({
+        _id: new ObjectId(user._id),
+      });
+
+      if (!userDocument) {
+        errorResponse = {
+          statusCode: 404,
+          errorMessage: "User not found",
+        };
+        return errorResponse;
+      }
+
+      const userData: User = {
+        id: userDocument._id.toString(),
+        name: userDocument.name,
+        userName: userDocument.userName,
+      };
+
       const loggeData: LoggedDataEntity = {
         statusCode: 200,
         token: token,
+        user: userData,
       };
       return loggeData;
     } catch (error) {
