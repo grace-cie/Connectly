@@ -33,6 +33,7 @@ export class UserRepositoryImpl implements UserRepository {
       name: newUserData.name,
       userName: newUserData.userName,
       password: hashedPassword,
+      profilePicture: newUserData.profilePicture,
     };
 
     await this.userCollection.insertOne(completeUserData);
