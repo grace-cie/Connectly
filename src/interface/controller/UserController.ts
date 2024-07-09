@@ -20,6 +20,7 @@ export class UserController {
         .required()
         .label("Confirm password")
         .options({ messages: { "any.only": "{{#label}} does not match" } }),
+      profilePicture: Joi.string().required(),
     });
 
     const { error, value } = schema.validate(req.body);
@@ -32,6 +33,7 @@ export class UserController {
         name: value.name,
         userName: value.userName,
         password: value.password,
+        profilePicture: value.profilePicture,
       });
       res
         .status(result instanceof ErrorResponse ? result.statusCode : 201)

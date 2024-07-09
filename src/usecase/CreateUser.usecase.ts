@@ -9,12 +9,19 @@ export class CreateUserUsecase {
     name,
     userName,
     password,
+    profilePicture,
   }: {
     name: string;
     userName: string;
     password: string;
+    profilePicture: string;
   }): Promise<string | ErrorResponse> {
-    const newUserData = new RegisterUserDto(name, userName, password);
+    const newUserData = new RegisterUserDto(
+      name,
+      userName,
+      password,
+      profilePicture
+    );
     const result = await this.userRepository.registerUser(newUserData);
     return result;
   }
