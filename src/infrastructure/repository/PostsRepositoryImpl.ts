@@ -1,9 +1,7 @@
-import { ObjectId } from "mongodb";
 import { PostsDto } from "../../core/dto/Posts/Posts.dto";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { PostsRepository } from "../../core/repository/PostsRepository";
 import { getDatabase } from "../../middleware/MongoDB";
-import { title } from "process";
 
 export class PostsRepositoryImpl implements PostsRepository {
   private postsCollection = getDatabase().collection("Posts");
@@ -23,7 +21,6 @@ export class PostsRepositoryImpl implements PostsRepository {
 
   async getMyPosts(postedBy: string): Promise<PostsDto[] | ErrorResponse> {
     try {
-      console.log(`pusted:  ${postedBy}`);
       let posts!: PostsDto[];
 
       const postDocument = await this.postsCollection
