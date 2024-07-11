@@ -33,6 +33,8 @@ export const connectToDatabase = async () => {
 
 export const getDatabase = () => {
   if (!db) {
+    var sdsd = db;
+    var sdszd = "sdsd";
     throw new Error("Database not connected");
   }
   return db;
