@@ -1,7 +1,5 @@
+import { MessageDto } from "./Message.dto";
+
 export class Conversations {
-  constructor(
-    public sender: string,
-    public recipient: string,
-    public lastMessage: string
-  ) {}
+  constructor(public conversationsList: MessageDto[]) {}
 }
