@@ -4,10 +4,13 @@ import { MessageDto } from "../../core/dto/Chat/Message.dto";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { ChatRepository } from "../../core/repository/ChatRepository";
 import { getDatabase } from "../../middleware/MongoDB";
+import { Conversations } from "../../core/dto/Chat/Conversations.dto";
 
 export class ChatRepositoryImpl implements ChatRepository {
   private conversationCollection: Collection<Conversation> =
     getDatabase().collection("Conversation");
+  private conversationsCollection: Collection<Conversations> =
+    getDatabase().collection("Conversations");
   private userCollection = getDatabase().collection("Users");
 
   async sendMessage(messageDto: MessageDto): Promise<string | ErrorResponse> {
@@ -44,15 +47,30 @@ export class ChatRepositoryImpl implements ChatRepository {
     // Checking if there's an existing record of the two users
     const existingConversation = senderConvo || recipientConvo;
 
+    const conversationId = senderConvo?._id ?? recipientConvo?._id;
+
     // Updating the existing conversation
     if (existingConversation) {
       try {
+        // find conversation with conversationId
+        const result = await this.conversationCollection.findOne({
+          _id: conversationId,
+        });
+
+        // update the conversations with the conversationsId property
+        await this.conversationsCollection.updateOne(
+          {
+            _id: result?.conversationsId,
+          },
+          { $push: { conversationsList: messageDto } }
+        );
+
+        // update the last message
         await this.conversationCollection.updateOne(
           {
-            sender: !senderConvo ? messageDto.recipient : messageDto.sender,
-            recipient: !senderConvo ? messageDto.sender : messageDto.recipient,
+            _id: conversationId,
           },
-          { $push: { conversationList: messageDto } }
+          { $set: { lastMessage: messageDto.content } }
         );
         return "Message Sent";
       } catch (e) {
@@ -66,10 +84,17 @@ export class ChatRepositoryImpl implements ChatRepository {
 
     // Create a new conversation
     try {
+      const conversationsData: Conversations = {
+        conversationsList: [messageDto],
+      };
+      const result = await this.conversationsCollection.insertOne(
+        conversationsData
+      );
       const conversationData: Conversation = {
         sender: messageDto.sender,
         recipient: messageDto.recipient,
-        conversationList: [messageDto],
+        lastMessage: messageDto.content,
+        conversationsId: result.insertedId,
       };
       await this.conversationCollection.insertOne(conversationData);
       return "Message Sent";
