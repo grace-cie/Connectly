@@ -1,14 +1,20 @@
+import Joi from "joi";
+import objectId from "../../utils/ObjectId";
 import { Request, Response } from "express";
 import { ChatSseUsecase } from "../../usecase/ChatSse.usecase";
 import { MessageDto } from "../../core/dto/Chat/Message.dto";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
+import { Conversation } from "../../core/dto/Chat/Conversation.dto";
+import { GetConversationUsecase } from "../../usecase/GetConversation.usecase";
+import { ConversationsResultDto } from "../../core/dto/Chat/ConversationsResult.dto";
+import { GetConversationsUsecase } from "../../usecase/GetConversations.usecase";
 
 export class ChatController {
-  private chatSseUsecase: ChatSseUsecase;
-
-  constructor(chatSseUsecase: ChatSseUsecase) {
-    this.chatSseUsecase = chatSseUsecase;
-  }
+  constructor(
+    private chatSseUsecase: ChatSseUsecase,
+    private getConversationUsecase: GetConversationUsecase,
+    private getConversationsUsecase: GetConversationsUsecase
+  ) {}
 
   sse(req: Request, res: Response) {
     const username = (req as any).user.username;
@@ -43,5 +49,41 @@ export class ChatController {
     res
       .status(typeof result === "string" ? 201 : result.statusCode)
       .send({ message: result });
+  }
+
+  async getConversation(req: Request, res: Response) {
+    const userName = (req as any).user.username;
+
+    let result!: Conversation[] | ErrorResponse;
+
+    result = await this.getConversationUsecase.execute({
+      userName: userName,
+    });
+    res
+      .status(result instanceof ErrorResponse ? result.statusCode : 201)
+      .send({ data: result });
+  }
+
+  async getConversations(req: Request, res: Response) {
+    const schema = Joi.object({
+      conversationsId: objectId.objectId().required(),
+      page: Joi.number().required(),
+    });
+
+    const { error, value } = schema.validate(req.body);
+
+    let result!: ConversationsResultDto | ErrorResponse;
+
+    if (error) {
+      res.status(400).json({ message: error.details[0].message });
+    } else {
+      result = await this.getConversationsUsecase.execute({
+        conversationsId: value.conversationsId,
+        page: value.page,
+      });
+      res
+        .status(result instanceof ErrorResponse ? result.statusCode : 200)
+        .send({ data: result });
+    }
   }
 }
