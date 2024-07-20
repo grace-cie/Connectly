@@ -38,6 +38,7 @@ export class PostController {
   async myPosts(req: Request, res: Response): Promise<void> {
     const schema = Joi.object({
       postedBy: Joi.string().required(),
+      page: Joi.number().required(),
     });
 
     const { value, error } = schema.validate(req.params);
@@ -47,8 +48,9 @@ export class PostController {
     } else {
       const result = await this.getMyPostsUsecase.execute({
         postedBy: value.postedBy,
+        page: value.page,
       });
-      res.json({ data: { post: result } });
+      res.json({ data: result });
     }
   }
 }

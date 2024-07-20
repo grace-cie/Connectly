@@ -23,7 +23,9 @@ import { CreatePostUsecase } from "./usecase/CreatePosts.usecase";
 import { GetMyPostsUsecase } from "./usecase/GetMyPosts.usecase";
 import { ChatRepositoryImpl } from "./infrastructure/repository/ChatRepositoryImpl";
 import { ChatSseUsecase } from "./usecase/ChatSse.usecase";
+import { GetConversationUsecase } from "./usecase/GetConversation.usecase";
 import { ChatController } from "./interface/controller/ChatController";
+import { GetConversationsUsecase } from "./usecase/GetConversations.usecase";
 /// initaialize env's
 dotenv.config();
 
@@ -48,6 +50,8 @@ const loginUserUsecase = new LoginUserUsecase(authenticationRepository);
 const createPostUsecase = new CreatePostUsecase(postRepository);
 const getMyPostsUsecase = new GetMyPostsUsecase(postRepository);
 const chatSseUsecase = new ChatSseUsecase(chatRepository);
+const getConversationUsecase = new GetConversationUsecase(chatRepository);
+const getConversationsUsecase = new GetConversationsUsecase(chatRepository);
 
 /// Controllers
 ///
@@ -57,7 +61,11 @@ const userController = new UserController(
 );
 const loginController = new LoginController(loginUserUsecase);
 const postController = new PostController(createPostUsecase, getMyPostsUsecase);
-const chatController = new ChatController(chatSseUsecase);
+const chatController = new ChatController(
+  chatSseUsecase,
+  getConversationUsecase,
+  getConversationsUsecase
+);
 
 // Middleware
 app.use(bodyParser.json());
@@ -78,12 +86,14 @@ app.get("/getUsers", authenticateToken, (req, res) =>
 app.post("/createpost", authenticateToken, (req, res) =>
   postController.createPost(req, res)
 );
-app.get("/myposts/:postedBy", authenticateToken, (req, res) =>
+app.get("/myposts/:postedBy/:page", authenticateToken, (req, res) =>
   postController.myPosts(req, res)
 );
 
 // Chat Sse Route
 const chatRouter = Router();
+app.use("/chat", chatRouter);
+
 chatRouter.get("/events", authenticateToken, (req, res) =>
   chatController.sse(req, res)
 );
@@ -91,8 +101,14 @@ chatRouter.get("/events", authenticateToken, (req, res) =>
 chatRouter.post("/send", authenticateToken, (req, res) =>
   chatController.sendMessage(req, res)
 );
-app.use("/chat", chatRouter);
 
+app.get("/getConversation", authenticateToken, (req, res) =>
+  chatController.getConversation(req, res)
+);
+
+app.get("/getConversations", authenticateToken, (req, res) =>
+  chatController.getConversations(req, res)
+);
 // Start server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
