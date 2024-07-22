@@ -48,7 +48,7 @@ export class ChatController {
 
     res
       .status(typeof result === "string" ? 201 : result.statusCode)
-      .send({ message: result });
+      .send(typeof result === "string" ? { errors: result } : { data: result });
   }
 
   async getConversation(req: Request, res: Response) {
@@ -61,7 +61,9 @@ export class ChatController {
     });
     res
       .status(result instanceof ErrorResponse ? result.statusCode : 201)
-      .send({ data: result });
+      .send(
+        result instanceof ErrorResponse ? { errors: result } : { data: result }
+      );
   }
 
   async getConversations(req: Request, res: Response) {
@@ -83,7 +85,11 @@ export class ChatController {
       });
       res
         .status(result instanceof ErrorResponse ? result.statusCode : 200)
-        .send({ data: result });
+        .send(
+          result instanceof ErrorResponse
+            ? { errors: result }
+            : { data: result }
+        );
     }
   }
 }

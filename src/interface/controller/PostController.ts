@@ -22,7 +22,7 @@ export class PostController {
 
     let result!: string | ErrorResponse;
     if (error) {
-      res.status(400).json({ message: error.details[0].message });
+      res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
       result = await this.createPostUsecase.execute({
         postedBy: value.postedBy,
@@ -31,7 +31,11 @@ export class PostController {
       });
       res
         .status(result instanceof ErrorResponse ? result.statusCode : 201)
-        .send({ message: result });
+        .send(
+          result instanceof ErrorResponse
+            ? { errors: result }
+            : { data: result }
+        );
     }
   }
 
@@ -44,13 +48,19 @@ export class PostController {
     const { value, error } = schema.validate(req.params);
 
     if (error) {
-      res.status(400).json({ message: error.details[0].message });
+      res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
       const result = await this.getMyPostsUsecase.execute({
         postedBy: value.postedBy,
         page: value.page,
       });
-      res.json({ data: result });
+      res
+        .status(result instanceof ErrorResponse ? result.statusCode : 200)
+        .send(
+          result instanceof ErrorResponse
+            ? { errors: result }
+            : { data: result }
+        );
     }
   }
 }

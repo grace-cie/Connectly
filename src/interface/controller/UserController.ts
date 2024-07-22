@@ -27,7 +27,7 @@ export class UserController {
 
     let result!: string | ErrorResponse;
     if (error) {
-      res.status(400).json({ message: error.details[0].message });
+      res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
       result = await this.createUserUsecase.execute({
         name: value.name,
@@ -37,7 +37,11 @@ export class UserController {
       });
       res
         .status(result instanceof ErrorResponse ? result.statusCode : 201)
-        .send({ message: result });
+        .send(
+          result instanceof ErrorResponse
+            ? { errors: result }
+            : { data: { message: result } }
+        );
     }
   }
 
