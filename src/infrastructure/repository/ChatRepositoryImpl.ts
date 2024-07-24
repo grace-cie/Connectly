@@ -6,6 +6,7 @@ import { ChatRepository } from "../../core/repository/ChatRepository";
 import { getDatabase } from "../../middleware/MongoDB";
 import { Conversations } from "../../core/dto/Chat/Conversations.dto";
 import { ConversationsResultDto } from "../../core/dto/Chat/ConversationsResult.dto";
+import { Either, makeLeft, makeRight } from "../../utils/Either";
 
 export class ChatRepositoryImpl implements ChatRepository {
   private conversationCollection: Collection<Conversation> =
@@ -14,7 +15,9 @@ export class ChatRepositoryImpl implements ChatRepository {
     getDatabase().collection("Conversations");
   private userCollection = getDatabase().collection("Users");
 
-  async sendMessage(messageDto: MessageDto): Promise<string | ErrorResponse> {
+  async sendMessage(
+    messageDto: MessageDto
+  ): Promise<Either<ErrorResponse, string>> {
     let errorResponse!: ErrorResponse;
 
     // Check if both sender and recipient are valid users
@@ -30,7 +33,7 @@ export class ChatRepositoryImpl implements ChatRepository {
         statusCode: 400,
         errorMessage: `${!sender ? "Sender" : "Recipient"} is invalid`,
       };
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
 
     // sender is sender
@@ -73,13 +76,13 @@ export class ChatRepositoryImpl implements ChatRepository {
           },
           { $set: { lastMessage: messageDto.content } }
         );
-        return "Message Sent";
+        return makeRight("Message Sent");
       } catch (e) {
         errorResponse = {
           statusCode: 500,
           errorMessage: `Message Not Sent! : ${e}`,
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
     }
 
@@ -98,19 +101,19 @@ export class ChatRepositoryImpl implements ChatRepository {
         conversationsId: result.insertedId,
       };
       await this.conversationCollection.insertOne(conversationData);
-      return "Message Sent";
+      return makeRight("Message Sent");
     } catch (e) {
       errorResponse = {
         statusCode: 500,
         errorMessage: `Message Not Sent! : ${e}`,
       };
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
   }
 
   async getConversation(
     userName: string
-  ): Promise<Conversation[] | ErrorResponse> {
+  ): Promise<Either<ErrorResponse, Conversation[]>> {
     let conversationList: Conversation[];
     let errorResponse!: ErrorResponse;
 
@@ -141,14 +144,14 @@ export class ChatRepositoryImpl implements ChatRepository {
       }));
 
       // Return the list of conversations
-      return conversationList;
+      return makeRight(conversationList);
     } else {
       // If no conversations are found, return an error response
       errorResponse = {
         statusCode: 404,
         errorMessage: `Conversation Not Found!`,
       };
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
   }
 
@@ -156,7 +159,7 @@ export class ChatRepositoryImpl implements ChatRepository {
     conversationsId: ObjectId,
     page: number,
     pageSize: number = 10 // Default page size
-  ): Promise<ConversationsResultDto | ErrorResponse> {
+  ): Promise<Either<ErrorResponse, ConversationsResultDto>> {
     let conversationsResult: ConversationsResultDto;
     let errorResponse!: ErrorResponse;
 
@@ -175,7 +178,7 @@ export class ChatRepositoryImpl implements ChatRepository {
           statusCode: 404,
           errorMessage: "Conversations Record Not Found!",
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       // Calculate the total number of items and the maximum number of pages
@@ -188,7 +191,7 @@ export class ChatRepositoryImpl implements ChatRepository {
           statusCode: 404,
           errorMessage: "Page number exceeds maximum pages",
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       // Calculate the starting index for the current page
@@ -215,14 +218,14 @@ export class ChatRepositoryImpl implements ChatRepository {
       };
 
       // Return the result object
-      return conversationsResult;
+      return makeRight(conversationsResult);
     } catch (error) {
       // In case of any error, create and return an error response with status code 500
       errorResponse = {
         statusCode: 500,
         errorMessage: `An error occurred while retrieving conversations: ${error}`,
       };
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
   }
 }

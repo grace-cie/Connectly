@@ -5,13 +5,14 @@ import { UserRepository } from "../../core/repository/UserRepository";
 import { getDatabase } from "../../middleware/MongoDB";
 import { ObjectId } from "mongodb"; // Import ObjectId for querying by _id
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
+import { Either, makeLeft, makeRight } from "../../utils/Either";
 
 export class UserRepositoryImpl implements UserRepository {
   private userCollection = getDatabase().collection("Users");
 
   async registerUser(
     newUserData: RegisterUserDto
-  ): Promise<string | ErrorResponse> {
+  ): Promise<Either<ErrorResponse, string>> {
     let errorResponse!: ErrorResponse;
 
     const existingUser = await this.userCollection.findOne({
@@ -24,7 +25,7 @@ export class UserRepositoryImpl implements UserRepository {
         errorMessage: "User already exist, Try another username",
       };
 
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newUserData.password, salt);
@@ -37,7 +38,7 @@ export class UserRepositoryImpl implements UserRepository {
     };
 
     await this.userCollection.insertOne(completeUserData);
-    return "created";
+    return makeRight("created");
   }
 
   async findById(id: string): Promise<User | null> {

@@ -2,7 +2,7 @@ import { Response } from "express";
 import { MessageDto } from "../core/dto/Chat/Message.dto";
 import { ChatRepository } from "../core/repository/ChatRepository";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
-import { string } from "joi";
+import { Either, isRight, unwrapEither } from "../utils/Either";
 
 // interface Message {
 //   sender: string;
@@ -44,7 +44,7 @@ export class ChatSseUsecase {
     message,
   }: {
     message: MessageDto;
-  }): Promise<string | ErrorResponse> {
+  }): Promise<Either<ErrorResponse, string>> {
     const { sender, recipient, sentAt, content } = message;
 
     // Send message to the recipient
@@ -54,7 +54,7 @@ export class ChatSseUsecase {
 
     const result = await this.chatRepository.sendMessage(message);
 
-    if (typeof result === "string") {
+    if (isRight(result)) {
       if (recipientClients) {
         recipientClients.forEach((client: Response) => {
           client.write(

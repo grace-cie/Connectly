@@ -4,6 +4,8 @@ import { Request, Response } from "express";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { CreatePostUsecase } from "../../usecase/CreatePosts.usecase";
 import { GetMyPostsUsecase } from "../../usecase/GetMyPosts.usecase";
+import { Either, isRight, unwrapEither } from "../../utils/Either";
+import { PostsResultDto } from "../../core/dto/Posts/PostsResult.dto";
 
 export class PostController {
   constructor(
@@ -20,7 +22,7 @@ export class PostController {
 
     const { error, value } = schema.validate(req.body);
 
-    let result!: string | ErrorResponse;
+    let result: Either<ErrorResponse, string>;
     if (error) {
       res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
@@ -29,13 +31,15 @@ export class PostController {
         title: value.title,
         body: value.body,
       });
-      res
-        .status(result instanceof ErrorResponse ? result.statusCode : 201)
-        .send(
-          result instanceof ErrorResponse
-            ? { errors: result }
-            : { data: result }
-        );
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(201).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: result });
     }
   }
 
@@ -47,20 +51,24 @@ export class PostController {
 
     const { value, error } = schema.validate(req.params);
 
+    let result: Either<ErrorResponse, PostsResultDto>;
+
     if (error) {
       res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
-      const result = await this.getMyPostsUsecase.execute({
+      result = await this.getMyPostsUsecase.execute({
         postedBy: value.postedBy,
         page: value.page,
       });
-      res
-        .status(result instanceof ErrorResponse ? result.statusCode : 200)
-        .send(
-          result instanceof ErrorResponse
-            ? { errors: result }
-            : { data: result }
-        );
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: result });
     }
   }
 }

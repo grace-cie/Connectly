@@ -1,6 +1,7 @@
 import { RegisterUserDto } from "../core/dto/Auth/RegisterUser.dto";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
 import { UserRepository } from "../core/repository/UserRepository";
+import { Either } from "../utils/Either";
 
 export class CreateUserUsecase {
   constructor(private userRepository: UserRepository) {}
@@ -15,7 +16,7 @@ export class CreateUserUsecase {
     userName: string;
     password: string;
     profilePicture: string;
-  }): Promise<string | ErrorResponse> {
+  }): Promise<Either<ErrorResponse, string>> {
     const newUserData = new RegisterUserDto(
       name,
       userName,

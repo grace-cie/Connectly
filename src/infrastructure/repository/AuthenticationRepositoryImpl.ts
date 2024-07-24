@@ -7,11 +7,14 @@ import { ObjectId } from "mongodb";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { LoggedDataEntity } from "../../core/entity/LoggedData.entity";
 import { User } from "../../core/entity/User.entity";
+import { Either, makeLeft, makeRight } from "../../utils/Either";
 
 export class AuthenticationRepositoryImpl implements AuthenticationRepository {
   private userCollection = getDatabase().collection("Users");
 
-  async login(loginDto: LoginDto): Promise<LoggedDataEntity | ErrorResponse> {
+  async login(
+    loginDto: LoginDto
+  ): Promise<Either<ErrorResponse, LoggedDataEntity>> {
     const userName = loginDto.userName;
     const password = loginDto.password;
 
@@ -26,7 +29,7 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
           errorMessage: "Invalid credentials",
         };
 
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -36,7 +39,7 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
           statusCode: 401,
           errorMessage: "Wrong password",
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       const token = jwt.sign(
@@ -56,7 +59,7 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
           statusCode: 404,
           errorMessage: "User not found",
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       const userData: User = {
@@ -70,14 +73,14 @@ export class AuthenticationRepositoryImpl implements AuthenticationRepository {
         token: token,
         user: userData,
       };
-      return loggeData;
+      return makeRight(loggeData);
     } catch (error) {
       const errorResponse: ErrorResponse = {
         statusCode: 401,
         errorMessage: "Invalid credentials",
       };
 
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
   }
 }

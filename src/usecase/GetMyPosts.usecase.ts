@@ -3,6 +3,7 @@ import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
 import { PostsDto } from "../core/dto/Posts/Posts.dto";
 import { PostsRepository } from "../core/repository/PostsRepository";
 import { PostsResultDto } from "../core/dto/Posts/PostsResult.dto";
+import { Either } from "../utils/Either";
 
 export class GetMyPostsUsecase {
   constructor(private postsRepository: PostsRepository) {}
@@ -13,7 +14,7 @@ export class GetMyPostsUsecase {
   }: {
     postedBy: string;
     page: number;
-  }): Promise<PostsResultDto | ErrorResponse> {
+  }): Promise<Either<ErrorResponse, PostsResultDto>> {
     const result = await this.postsRepository.getMyPosts(postedBy, page);
     return result;
   }
