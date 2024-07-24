@@ -8,6 +8,7 @@ import { Conversation } from "../../core/dto/Chat/Conversation.dto";
 import { GetConversationUsecase } from "../../usecase/GetConversation.usecase";
 import { ConversationsResultDto } from "../../core/dto/Chat/ConversationsResult.dto";
 import { GetConversationsUsecase } from "../../usecase/GetConversations.usecase";
+import { Either, isRight, unwrapEither } from "../../utils/Either";
 
 export class ChatController {
   constructor(
@@ -42,28 +43,39 @@ export class ChatController {
       content: content,
     };
 
-    let result!: string | ErrorResponse;
+    let result: Either<ErrorResponse, string>;
 
     result = await this.chatSseUsecase.sendMessage({ message: message });
 
-    res
-      .status(typeof result === "string" ? 201 : result.statusCode)
-      .send(typeof result === "string" ? { errors: result } : { data: result });
+    if (isRight(result)) {
+      const data = unwrapEither(result);
+      res.status(201).send({ data: data });
+      return;
+    }
+
+    const error = unwrapEither(result);
+    res.status(error.statusCode).send({ errors: error });
+    return;
   }
 
   async getConversation(req: Request, res: Response) {
     const userName = (req as any).user.username;
 
-    let result!: Conversation[] | ErrorResponse;
+    let result: Either<ErrorResponse, Conversation[]>;
 
     result = await this.getConversationUsecase.execute({
       userName: userName,
     });
-    res
-      .status(result instanceof ErrorResponse ? result.statusCode : 201)
-      .send(
-        result instanceof ErrorResponse ? { errors: result } : { data: result }
-      );
+
+    if (isRight(result)) {
+      const data = unwrapEither(result);
+      res.status(200).send({ data: data });
+      return;
+    }
+
+    const error = unwrapEither(result);
+    res.status(error.statusCode).send({ errors: error });
+    return;
   }
 
   async getConversations(req: Request, res: Response) {
@@ -74,22 +86,25 @@ export class ChatController {
 
     const { error, value } = schema.validate(req.body);
 
-    let result!: ConversationsResultDto | ErrorResponse;
+    let result: Either<ErrorResponse, ConversationsResultDto>;
 
     if (error) {
-      res.status(400).json({ message: error.details[0].message });
+      res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
       result = await this.getConversationsUsecase.execute({
         conversationsId: value.conversationsId,
         page: value.page,
       });
-      res
-        .status(result instanceof ErrorResponse ? result.statusCode : 200)
-        .send(
-          result instanceof ErrorResponse
-            ? { errors: result }
-            : { data: result }
-        );
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+      return;
     }
   }
 }

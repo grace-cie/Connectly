@@ -3,20 +3,21 @@ import { PostsResultDto } from "../../core/dto/Posts/PostsResult.dto";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { PostsRepository } from "../../core/repository/PostsRepository";
 import { getDatabase } from "../../middleware/MongoDB";
+import { Either, makeLeft, makeRight } from "../../utils/Either";
 
 export class PostsRepositoryImpl implements PostsRepository {
   private postsCollection = getDatabase().collection("Posts");
 
-  async createPost(postData: PostsDto): Promise<string | ErrorResponse> {
+  async createPost(postData: PostsDto): Promise<Either<ErrorResponse, string>> {
     try {
       await this.postsCollection.insertOne(postData);
-      return "created";
+      return makeRight("created");
     } catch (e) {
-      const error: ErrorResponse = {
+      const errorResponse: ErrorResponse = {
         statusCode: 400,
         errorMessage: e?.toString() ?? "",
       };
-      return error;
+      return makeLeft(errorResponse);
     }
   }
 
@@ -24,7 +25,7 @@ export class PostsRepositoryImpl implements PostsRepository {
     postedBy: string,
     page: number,
     pageSize: number = 10 // Default page size
-  ): Promise<PostsResultDto | ErrorResponse> {
+  ): Promise<Either<ErrorResponse, PostsResultDto>> {
     let postsResult!: PostsResultDto;
     let errorResponse!: ErrorResponse;
 
@@ -43,7 +44,7 @@ export class PostsRepositoryImpl implements PostsRepository {
           statusCode: 404,
           errorMessage: "Page number exceeds maximum pages",
         };
-        return errorResponse;
+        return makeLeft(errorResponse);
       }
 
       // Calculate the number of documents to skip for the current page
@@ -78,14 +79,14 @@ export class PostsRepositoryImpl implements PostsRepository {
       new PostsResultDto(page, maxPage, posts);
 
       // Return the result object
-      return postsResult;
+      return makeRight(postsResult);
     } catch (e) {
       // In case of any error, create and return an error response with status code 500
       errorResponse = {
         statusCode: 500,
         errorMessage: `An error occurred while retrieving posts: ${e}`,
       };
-      return errorResponse;
+      return makeLeft(errorResponse);
     }
   }
 }

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { LoginUserUsecase } from "../../usecase/LoginUser.usecase";
 import { LoggedDataEntity } from "../../core/entity/LoggedData.entity";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
+import { Either, isRight, unwrapEither } from "../../utils/Either";
 
 export class LoginController {
   constructor(private usecase: LoginUserUsecase) {}
@@ -9,16 +10,20 @@ export class LoginController {
   async login(req: Request, res: Response): Promise<void> {
     const { userName, password } = req.body;
 
-    let result!: LoggedDataEntity | ErrorResponse;
+    let result: Either<ErrorResponse, LoggedDataEntity>;
     result = await this.usecase.execute({
       userName: userName,
       password: password,
     });
 
-    res
-      .status(result instanceof ErrorResponse ? result.statusCode : 200)
-      .send(
-        result instanceof ErrorResponse ? { errors: result } : { data: result }
-      );
+    if (isRight(result)) {
+      const data = unwrapEither(result);
+      res.status(200).send({ data: data });
+      return;
+    }
+
+    const error = unwrapEither(result);
+    res.status(error.statusCode).send({ errors: error });
+    return;
   }
 }

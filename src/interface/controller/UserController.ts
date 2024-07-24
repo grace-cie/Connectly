@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { CreateUserUsecase } from "../../usecase/CreateUser.usecase";
 import { GetUsersUsecase } from "../../usecase/GetUsers.usecase";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
+import { Either, isRight, unwrapEither } from "../../utils/Either";
 
 export class UserController {
   constructor(
@@ -25,7 +26,7 @@ export class UserController {
 
     const { error, value } = schema.validate(req.body);
 
-    let result!: string | ErrorResponse;
+    let result: Either<ErrorResponse, string>;
     if (error) {
       res.status(400).json({ errors: { message: error.details[0].message } });
     } else {
@@ -35,13 +36,16 @@ export class UserController {
         password: value.password,
         profilePicture: value.profilePicture,
       });
-      res
-        .status(result instanceof ErrorResponse ? result.statusCode : 201)
-        .send(
-          result instanceof ErrorResponse
-            ? { errors: result }
-            : { data: { message: result } }
-        );
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(201).send({ data: { message: result } });
+        return;
+      }
+
+      const error = unwrapEither(result);
+
+      res.status(error.statusCode).send({ errors: error });
     }
   }
 
