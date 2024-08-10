@@ -29,6 +29,7 @@ export class UserController {
     let result: Either<ErrorResponse, string>;
     if (error) {
       res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
     } else {
       result = await this.createUserUsecase.execute({
         name: value.name,

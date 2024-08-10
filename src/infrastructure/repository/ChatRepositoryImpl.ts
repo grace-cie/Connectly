@@ -203,6 +203,7 @@ export class ChatRepositoryImpl implements ChatRepository {
         .map(
           (message: any) =>
             new MessageDto(
+              message._id,
               message.sender,
               message.recipient,
               new Date(message.sentAt), // Convert sentAt to Date object

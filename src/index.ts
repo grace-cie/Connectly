@@ -26,6 +26,9 @@ import { ChatSseUsecase } from "./usecase/ChatSse.usecase";
 import { GetConversationUsecase } from "./usecase/GetConversation.usecase";
 import { ChatController } from "./interface/controller/ChatController";
 import { GetConversationsUsecase } from "./usecase/GetConversations.usecase";
+import { DeletePostUsecase } from "./usecase/DeletePosts.usecase";
+import { AddCommentUsecase } from "./usecase/AddComment.usecase";
+import { AddReactionUsecase } from "./usecase/AddReaction.usecase";
 /// initaialize env's
 dotenv.config();
 
@@ -44,11 +47,14 @@ const chatRepository = new ChatRepositoryImpl();
 
 /// Usecases
 ///
+const loginUserUsecase = new LoginUserUsecase(authenticationRepository);
 const getAllUsersUsecase = new GetUsersUsecase(userRepository);
 const createUserUsecase = new CreateUserUsecase(userRepository);
-const loginUserUsecase = new LoginUserUsecase(authenticationRepository);
 const createPostUsecase = new CreatePostUsecase(postRepository);
+const deletePostUsecase = new DeletePostUsecase(postRepository);
 const getMyPostsUsecase = new GetMyPostsUsecase(postRepository);
+const addCommentUsecase = new AddCommentUsecase(postRepository);
+const addReactionUsecase = new AddReactionUsecase(postRepository);
 const chatSseUsecase = new ChatSseUsecase(chatRepository);
 const getConversationUsecase = new GetConversationUsecase(chatRepository);
 const getConversationsUsecase = new GetConversationsUsecase(chatRepository);
@@ -60,7 +66,13 @@ const userController = new UserController(
   getAllUsersUsecase
 );
 const loginController = new LoginController(loginUserUsecase);
-const postController = new PostController(createPostUsecase, getMyPostsUsecase);
+const postController = new PostController(
+  createPostUsecase,
+  getMyPostsUsecase,
+  deletePostUsecase,
+  addCommentUsecase,
+  addReactionUsecase
+);
 const chatController = new ChatController(
   chatSseUsecase,
   getConversationUsecase,
@@ -88,6 +100,15 @@ app.post("/createpost", authenticateToken, (req, res) =>
 );
 app.get("/myposts/:postedBy/:page", authenticateToken, (req, res) =>
   postController.myPosts(req, res)
+);
+app.delete("/deletePost/:postId/:user", authenticateToken, (req, res) =>
+  postController.deletePost(req, res)
+);
+app.post("/addComment", authenticateToken, (req, res) =>
+  postController.addComment(req, res)
+);
+app.post("/addReaction", authenticateToken, (req, res) =>
+  postController.addReaction(req, res)
 );
 
 // Chat Sse Route

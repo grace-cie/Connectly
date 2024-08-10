@@ -2,7 +2,7 @@ import { Response } from "express";
 import { MessageDto } from "../core/dto/Chat/Message.dto";
 import { ChatRepository } from "../core/repository/ChatRepository";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
-import { Either, isRight, unwrapEither } from "../utils/Either";
+import { Either, isRight } from "../utils/Either";
 
 // interface Message {
 //   sender: string;
