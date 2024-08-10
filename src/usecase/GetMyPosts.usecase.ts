@@ -12,7 +12,7 @@ export class GetMyPostsUsecase {
     postedBy,
     page,
   }: {
-    postedBy: string;
+    postedBy: ObjectId;
     page: number;
   }): Promise<Either<ErrorResponse, PostsResultDto>> {
     const result = await this.postsRepository.getMyPosts(postedBy, page);

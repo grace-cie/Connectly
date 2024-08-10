@@ -9,6 +9,7 @@ import { GetConversationUsecase } from "../../usecase/GetConversation.usecase";
 import { ConversationsResultDto } from "../../core/dto/Chat/ConversationsResult.dto";
 import { GetConversationsUsecase } from "../../usecase/GetConversations.usecase";
 import { Either, isRight, unwrapEither } from "../../utils/Either";
+import { ObjectId } from "mongodb";
 
 export class ChatController {
   constructor(
@@ -41,6 +42,7 @@ export class ChatController {
       recipient: recipient,
       sentAt: sendAt,
       content: content,
+      _id: new ObjectId(),
     };
 
     let result: Either<ErrorResponse, string>;
