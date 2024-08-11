@@ -24,4 +24,5 @@ export interface PostsRepository {
     reactToPost: ObjectId,
     reactionData: ReactionDto
   ): Promise<Either<ErrorResponse, string>>;
+  getAllPosts(page: number): Promise<Either<ErrorResponse, PostsResultDto>>;
 }
