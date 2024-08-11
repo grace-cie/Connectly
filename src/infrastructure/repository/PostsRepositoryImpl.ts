@@ -163,6 +163,87 @@ export class PostsRepositoryImpl implements PostsRepository {
     }
   }
 
+  async getAllPosts(
+    page: number,
+    pageSize: number = 10
+  ): Promise<Either<ErrorResponse, PostsResultDto>> {
+    let postsResult!: PostsResultDto;
+    let errorResponse!: ErrorResponse;
+
+    try {
+      // Fetch all posts from the collection
+      const posts = await this.postsCollection.find({}).toArray();
+
+      if (!posts || posts.length === 0) {
+        errorResponse = {
+          statusCode: 404,
+          errorMessage: "No posts found!",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Apply a simple ranking algorithm:
+      const rankedPosts = posts.sort((a: any, b: any) => {
+        // Rank by reaction, then by the number of comments, and finally by recency
+        const likeDifference = b.likes - a.likes;
+        const commentDifference = b.comments.length - a.comments.length;
+        const dateDifference =
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+
+        if (likeDifference !== 0) return likeDifference;
+        if (commentDifference !== 0) return commentDifference;
+        return dateDifference;
+      });
+
+      // , shuffle posts to introduce some randomness
+      const shuffledPosts = rankedPosts.sort(() => 0.5 - Math.random());
+
+      // Calculate pagination details
+      const totalItems = shuffledPosts.length;
+      const maxPage = Math.ceil(totalItems / pageSize);
+
+      if (page > maxPage) {
+        errorResponse = {
+          statusCode: 404,
+          errorMessage: "Page number exceeds maximum pages",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Slice the posts list to get the items for the current page
+      const pagedPostList = shuffledPosts
+        .slice((page - 1) * pageSize, page * pageSize)
+        .map(
+          (postData: any) =>
+            new PostsData(
+              postData.postedBy,
+              postData.title,
+              postData.body,
+              new Date(postData.createdAt),
+              postData.likes,
+              postData.comments,
+              postData._id
+            )
+        );
+
+      // Create the result object
+      postsResult = {
+        currentPage: page,
+        maxPage: maxPage,
+        postsList: pagedPostList,
+      };
+
+      // Return the result object
+      return makeRight(postsResult);
+    } catch (e) {
+      errorResponse = {
+        statusCode: 500,
+        errorMessage: `An error occurred while retrieving posts: ${e}`,
+      };
+      return makeLeft(errorResponse);
+    }
+  }
+
   async addComment(
     commentToPost: ObjectId,
     commentData: CommentDto

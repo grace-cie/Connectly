@@ -9,6 +9,7 @@ import { PostsResultDto } from "../../core/dto/Posts/PostsResult.dto";
 import { DeletePostUsecase } from "../../usecase/DeletePosts.usecase";
 import { AddCommentUsecase } from "../../usecase/AddComment.usecase";
 import { AddReactionUsecase } from "../../usecase/AddReaction.usecase";
+import { GetAllPostsUsecase } from "../../usecase/GetAllPosts.usecase";
 
 export class PostController {
   constructor(
@@ -16,7 +17,8 @@ export class PostController {
     private getMyPostsUsecase: GetMyPostsUsecase,
     private deletePostUsecase: DeletePostUsecase,
     private addCommentUsecase: AddCommentUsecase,
-    private addReactionUsecase: AddReactionUsecase
+    private addReactionUsecase: AddReactionUsecase,
+    private getAllPostsUsecase: GetAllPostsUsecase
   ) {}
 
   async createPost(req: Request, res: Response): Promise<void> {
@@ -66,6 +68,34 @@ export class PostController {
       result = await this.deletePostUsecase.execute({
         postId: value.postId,
         deleteByUser: value.user,
+      });
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+    }
+  }
+
+  async getAllPosts(req: Request, res: Response): Promise<void> {
+    const schema = Joi.object({
+      page: Joi.number().required(),
+    });
+
+    const { value, error } = schema.validate(req.body);
+
+    let result: Either<ErrorResponse, PostsResultDto>;
+
+    if (error) {
+      res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
+    } else {
+      result = await this.getAllPostsUsecase.execute({
+        page: value.page,
       });
 
       if (isRight(result)) {

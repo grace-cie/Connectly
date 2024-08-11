@@ -29,6 +29,7 @@ import { GetConversationsUsecase } from "./usecase/GetConversations.usecase";
 import { DeletePostUsecase } from "./usecase/DeletePosts.usecase";
 import { AddCommentUsecase } from "./usecase/AddComment.usecase";
 import { AddReactionUsecase } from "./usecase/AddReaction.usecase";
+import { GetAllPostsUsecase } from "./usecase/GetAllPosts.usecase";
 /// initaialize env's
 dotenv.config();
 
@@ -53,6 +54,7 @@ const createUserUsecase = new CreateUserUsecase(userRepository);
 const createPostUsecase = new CreatePostUsecase(postRepository);
 const deletePostUsecase = new DeletePostUsecase(postRepository);
 const getMyPostsUsecase = new GetMyPostsUsecase(postRepository);
+const getAllPostsUsecase = new GetAllPostsUsecase(postRepository);
 const addCommentUsecase = new AddCommentUsecase(postRepository);
 const addReactionUsecase = new AddReactionUsecase(postRepository);
 const chatSseUsecase = new ChatSseUsecase(chatRepository);
@@ -71,7 +73,8 @@ const postController = new PostController(
   getMyPostsUsecase,
   deletePostUsecase,
   addCommentUsecase,
-  addReactionUsecase
+  addReactionUsecase,
+  getAllPostsUsecase
 );
 const chatController = new ChatController(
   chatSseUsecase,
@@ -97,6 +100,9 @@ app.get("/getUsers", authenticateToken, (req, res) =>
 // Posts Route
 app.post("/createpost", authenticateToken, (req, res) =>
   postController.createPost(req, res)
+);
+app.get("/posts", authenticateToken, (req, res) =>
+  postController.getAllPosts(req, res)
 );
 app.get("/myposts/:postedBy/:page", authenticateToken, (req, res) =>
   postController.myPosts(req, res)
