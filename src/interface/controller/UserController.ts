@@ -4,11 +4,15 @@ import { CreateUserUsecase } from "../../usecase/CreateUser.usecase";
 import { GetUsersUsecase } from "../../usecase/GetUsers.usecase";
 import { ErrorResponse } from "../../core/entity/ErrorRespose.entity";
 import { Either, isRight, unwrapEither } from "../../utils/Either";
+import objectId from "../../utils/ObjectId";
+import { GetUserUsecase } from "../../usecase/GetUser.usecase";
+import { User } from "../../core/entity/User.entity";
 
 export class UserController {
   constructor(
     private createUserUsecase: CreateUserUsecase,
-    private getUsersUsecase: GetUsersUsecase
+    private getUsersUsecase: GetUsersUsecase,
+    private getUserUsecase: GetUserUsecase
   ) {}
 
   async registerUser(req: Request, res: Response): Promise<void> {
@@ -54,5 +58,33 @@ export class UserController {
     const result = await this.getUsersUsecase.execute();
 
     res.json({ data: { users: result } });
+  }
+
+  async getUser(req: Request, res: Response): Promise<void> {
+    const schema = Joi.object({
+      user: objectId.objectId().required(),
+    });
+
+    const { value, error } = schema.validate(req.params);
+
+    let result: Either<ErrorResponse, User>;
+
+    if (error) {
+      res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
+    } else {
+      result = await this.getUserUsecase.execute({
+        user: value.user,
+      });
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+    }
   }
 }
