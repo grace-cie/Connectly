@@ -86,7 +86,7 @@ export class PostController {
       page: Joi.number().required(),
     });
 
-    const { value, error } = schema.validate(req.body);
+    const { value, error } = schema.validate(req.params);
 
     let result: Either<ErrorResponse, PostsResultDto>;
 
