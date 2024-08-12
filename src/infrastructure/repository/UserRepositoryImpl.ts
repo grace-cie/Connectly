@@ -41,13 +41,19 @@ export class UserRepositoryImpl implements UserRepository {
     return makeRight("created");
   }
 
-  async findById(id: string): Promise<User | null> {
+  async getUser(id: ObjectId): Promise<Either<ErrorResponse, User>> {
+    let errorResponse!: ErrorResponse;
     const userDocument = await this.userCollection.findOne({
       _id: new ObjectId(id),
     });
 
     if (!userDocument) {
-      return null;
+      errorResponse = {
+        statusCode: 401,
+        errorMessage: "User already exist, Try another username",
+      };
+
+      return makeLeft(errorResponse);
     }
 
     const user: User = {
@@ -56,7 +62,7 @@ export class UserRepositoryImpl implements UserRepository {
       userName: userDocument.userName,
     };
 
-    return user;
+    return makeRight(user);
   }
 
   async getAllUsers(): Promise<User[]> {

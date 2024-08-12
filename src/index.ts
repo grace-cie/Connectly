@@ -30,6 +30,7 @@ import { DeletePostUsecase } from "./usecase/DeletePosts.usecase";
 import { AddCommentUsecase } from "./usecase/AddComment.usecase";
 import { AddReactionUsecase } from "./usecase/AddReaction.usecase";
 import { GetAllPostsUsecase } from "./usecase/GetAllPosts.usecase";
+import { GetUserUsecase } from "./usecase/GetUser.usecase";
 /// initaialize env's
 dotenv.config();
 
@@ -51,6 +52,7 @@ const chatRepository = new ChatRepositoryImpl();
 const loginUserUsecase = new LoginUserUsecase(authenticationRepository);
 const getAllUsersUsecase = new GetUsersUsecase(userRepository);
 const createUserUsecase = new CreateUserUsecase(userRepository);
+const getUserUsecase = new GetUserUsecase(userRepository);
 const createPostUsecase = new CreatePostUsecase(postRepository);
 const deletePostUsecase = new DeletePostUsecase(postRepository);
 const getMyPostsUsecase = new GetMyPostsUsecase(postRepository);
@@ -65,7 +67,8 @@ const getConversationsUsecase = new GetConversationsUsecase(chatRepository);
 ///
 const userController = new UserController(
   createUserUsecase,
-  getAllUsersUsecase
+  getAllUsersUsecase,
+  getUserUsecase
 );
 const loginController = new LoginController(loginUserUsecase);
 const postController = new PostController(
@@ -92,16 +95,21 @@ app.get("/", (req, res) => {
 
 // Auth Route
 app.post("/login", (req, res) => loginController.login(req, res));
+
+// Users Route
 app.post("/registerUser", (req, res) => userController.registerUser(req, res));
 app.get("/getUsers", authenticateToken, (req, res) =>
   userController.getUsers(req, res)
+);
+app.get("/getUser/:user", authenticateToken, (req, res) =>
+  userController.getUser(req, res)
 );
 
 // Posts Route
 app.post("/createpost", authenticateToken, (req, res) =>
   postController.createPost(req, res)
 );
-app.get("/posts", authenticateToken, (req, res) =>
+app.get("/posts/:page", authenticateToken, (req, res) =>
   postController.getAllPosts(req, res)
 );
 app.get("/myposts/:postedBy/:page", authenticateToken, (req, res) =>
