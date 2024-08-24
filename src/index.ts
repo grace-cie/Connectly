@@ -31,6 +31,9 @@ import { AddCommentUsecase } from "./usecase/AddComment.usecase";
 import { AddReactionUsecase } from "./usecase/AddReaction.usecase";
 import { GetAllPostsUsecase } from "./usecase/GetAllPosts.usecase";
 import { GetUserUsecase } from "./usecase/GetUser.usecase";
+import { DeleteCommentUsecase } from "./usecase/DeleteComment.usecase";
+import { EditCommentUsecase } from "./usecase/EditComment.usecase";
+import { EditPostUsecase } from "./usecase/EditPost.usecase";
 /// initaialize env's
 dotenv.config();
 
@@ -55,9 +58,12 @@ const createUserUsecase = new CreateUserUsecase(userRepository);
 const getUserUsecase = new GetUserUsecase(userRepository);
 const createPostUsecase = new CreatePostUsecase(postRepository);
 const deletePostUsecase = new DeletePostUsecase(postRepository);
+const editPostUsecase = new EditPostUsecase(postRepository);
 const getMyPostsUsecase = new GetMyPostsUsecase(postRepository);
 const getAllPostsUsecase = new GetAllPostsUsecase(postRepository);
 const addCommentUsecase = new AddCommentUsecase(postRepository);
+const deleteByUserUsecase = new DeleteCommentUsecase(postRepository);
+const editCommentUsecase = new EditCommentUsecase(postRepository);
 const addReactionUsecase = new AddReactionUsecase(postRepository);
 const chatSseUsecase = new ChatSseUsecase(chatRepository);
 const getConversationUsecase = new GetConversationUsecase(chatRepository);
@@ -75,7 +81,10 @@ const postController = new PostController(
   createPostUsecase,
   getMyPostsUsecase,
   deletePostUsecase,
+  editPostUsecase,
   addCommentUsecase,
+  deleteByUserUsecase,
+  editCommentUsecase,
   addReactionUsecase,
   getAllPostsUsecase
 );
@@ -118,8 +127,21 @@ app.get("/myposts/:postedBy/:page", authenticateToken, (req, res) =>
 app.delete("/deletePost/:postId/:user", authenticateToken, (req, res) =>
   postController.deletePost(req, res)
 );
+app.patch("/editPost/:postId/:editByUser", authenticateToken, (req, res) =>
+  postController.editPost(req, res)
+);
 app.post("/addComment", authenticateToken, (req, res) =>
   postController.addComment(req, res)
+);
+app.delete(
+  "/deleteComment/:commentId/:commentIdOnList/:deleteByUser",
+  authenticateToken,
+  (req, res) => postController.deleteComment(req, res)
+);
+app.patch(
+  "/editComment/:commentId/:editByUser",
+  authenticateToken,
+  (req, res) => postController.editComment(req, res)
 );
 app.post("/addReaction", authenticateToken, (req, res) =>
   postController.addReaction(req, res)

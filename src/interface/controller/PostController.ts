@@ -10,13 +10,19 @@ import { DeletePostUsecase } from "../../usecase/DeletePosts.usecase";
 import { AddCommentUsecase } from "../../usecase/AddComment.usecase";
 import { AddReactionUsecase } from "../../usecase/AddReaction.usecase";
 import { GetAllPostsUsecase } from "../../usecase/GetAllPosts.usecase";
+import { DeleteCommentUsecase } from "../../usecase/DeleteComment.usecase";
+import { EditCommentUsecase } from "../../usecase/EditComment.usecase";
+import { EditPostUsecase } from "../../usecase/EditPost.usecase";
 
 export class PostController {
   constructor(
     private createPostUsecase: CreatePostUsecase,
     private getMyPostsUsecase: GetMyPostsUsecase,
     private deletePostUsecase: DeletePostUsecase,
+    private editPostUsecase: EditPostUsecase,
     private addCommentUsecase: AddCommentUsecase,
+    private deleteCommentUsecase: DeleteCommentUsecase,
+    private editCommentUsecase: EditCommentUsecase,
     private addReactionUsecase: AddReactionUsecase,
     private getAllPostsUsecase: GetAllPostsUsecase
   ) {}
@@ -24,6 +30,7 @@ export class PostController {
   async createPost(req: Request, res: Response): Promise<void> {
     const schema = Joi.object({
       postedBy: objectId.objectId().required(),
+      postedByName: Joi.string().min(1).max(30).required(),
       title: Joi.string().min(1).max(30).required(),
       body: Joi.string().min(1).max(100).required(),
     });
@@ -36,6 +43,7 @@ export class PostController {
     } else {
       result = await this.createPostUsecase.execute({
         postedBy: value.postedBy,
+        postedByName: value.postedByName,
         title: value.title,
         body: value.body,
       });
@@ -126,6 +134,127 @@ export class PostController {
       result = await this.getMyPostsUsecase.execute({
         postedBy: value.postedBy,
         page: value.page,
+      });
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+    }
+  }
+
+  async editPost(req: Request, res: Response): Promise<void> {
+    // Schema for validating params
+    const paramsSchema = Joi.object({
+      postId: objectId.objectId().required(),
+      editByUser: objectId.objectId().required(),
+    });
+
+    // Schema for validating body
+    const bodySchema = Joi.object({
+      title: Joi.string().min(1).max(30).required(),
+      body: Joi.string().min(1).max(100).required(),
+    });
+
+    const { value: paramsVal, error: paramsErr } = paramsSchema.validate(
+      req.params
+    );
+    const { value: bodyVal, error: bodyErr } = bodySchema.validate(req.body);
+
+    const error = paramsErr || bodyErr;
+    let result: Either<ErrorResponse, string>;
+
+    if (error) {
+      res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
+    } else {
+      result = await this.editPostUsecase.execute({
+        postId: paramsVal.postId,
+        editByUser: paramsVal.editByUser,
+        title: bodyVal.title,
+        body: bodyVal.body,
+      });
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+    }
+  }
+
+  async deleteComment(req: Request, res: Response): Promise<void> {
+    const schema = Joi.object({
+      commentId: objectId.objectId().required(),
+      commentIdOnList: objectId.objectId().required(),
+      deleteByUser: objectId.objectId().required(),
+    });
+
+    const { value, error } = schema.validate(req.params);
+    let result: Either<ErrorResponse, string>;
+
+    if (error) {
+      res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
+    } else {
+      result = await this.deleteCommentUsecase.execute({
+        commentId: value.commentId,
+        commentIdOnList: value.commentIdOnList,
+        deleteByUser: value.deleteByUser,
+      });
+
+      if (isRight(result)) {
+        const data = unwrapEither(result);
+        res.status(200).send({ data: data });
+        return;
+      }
+
+      const error = unwrapEither(result);
+      res.status(error.statusCode).send({ errors: error });
+    }
+  }
+
+  async editComment(req: Request, res: Response): Promise<void> {
+    // Schema for validating params
+    const paramsSchema = Joi.object({
+      commentId: objectId.objectId().required(),
+      editByUser: objectId.objectId().required(),
+    });
+
+    // Schema for validating body
+    const bodySchema = Joi.object({
+      commentOnListId: objectId.objectId().required(),
+      commentBy: objectId.objectId().required(),
+      name: Joi.string().required(),
+      comment: Joi.string().required(),
+    });
+
+    const { value: paramsVal, error: paramsErr } = paramsSchema.validate(
+      req.params
+    );
+    const { value: bodyVal, error: bodyErr } = bodySchema.validate(req.body);
+
+    const error = paramsErr || bodyErr;
+    let result: Either<ErrorResponse, string>;
+
+    if (error) {
+      res.status(400).json({ errors: { message: error.details[0].message } });
+      return;
+    } else {
+      result = await this.editCommentUsecase.execute({
+        commentId: paramsVal.commentId,
+        editByUser: paramsVal.editByUser,
+        commentOnListId: bodyVal.commentOnListId,
+        commentBy: bodyVal.commentBy,
+        name: bodyVal.name,
+        comment: bodyVal.comment,
       });
 
       if (isRight(result)) {

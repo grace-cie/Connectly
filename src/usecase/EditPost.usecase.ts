@@ -2,31 +2,38 @@ import { ObjectId } from "mongodb";
 import { ErrorResponse } from "../core/entity/ErrorRespose.entity";
 import { PostsRepository } from "../core/repository/PostsRepository";
 import { Either } from "../utils/Either";
-import { PostsData } from "../core/entity/PostsData.entity";
+import { PostsDto } from "../core/dto/Posts/Posts.dto";
 
-export class CreatePostUsecase {
+export class EditPostUsecase {
   constructor(private postsRepository: PostsRepository) {}
 
   async execute({
-    postedBy,
-    postedByName,
+    postId,
+    editByUser,
+    /// post data
     title,
     body,
   }: {
-    postedBy: ObjectId;
-    postedByName: string;
+    postId: ObjectId;
+    editByUser: ObjectId;
+    /// post data
     title: string;
     body: string;
   }): Promise<Either<ErrorResponse, string>> {
-    const newPostData = new PostsData(
-      postedBy,
-      postedByName,
+    const postData = new PostsDto(
+      new ObjectId(),
+      new ObjectId(),
       title,
       body,
-      0,
-      0
+      new Date(),
+      [],
+      []
     );
-    const result = await this.postsRepository.createPost(newPostData);
+    const result = await this.postsRepository.editPost(
+      postId,
+      editByUser,
+      postData
+    );
     return result;
   }
 }
