@@ -8,6 +8,8 @@ import { Either, makeLeft, makeRight } from "../../utils/Either";
 import { CommentDto } from "../../core/dto/Posts/Comment.dto";
 import { ReactionDto } from "../../core/dto/Posts/Reaction.dto";
 import { ReactionsDto } from "../../core/dto/Posts/Reactions.dto";
+import { CommentsDto } from "../../core/dto/Posts/Comments.dto";
+import { PostsDto } from "../../core/dto/Posts/Posts.dto";
 
 export class PostsRepositoryImpl implements PostsRepository {
   private db = getDatabase();
@@ -30,8 +32,11 @@ export class PostsRepositoryImpl implements PostsRepository {
 
       const post: PostsData = {
         postedBy: new ObjectId(postData.postedBy),
+        postedByName: postData.postedByName,
         title: postData.title,
         body: postData.body,
+        reactionsCount: postData.reactionsCount,
+        commentsCount: postData.commentsCount,
         createdAt: new Date(),
         reactions: likesResult.insertedId,
         comments: commentsResult.insertedId,
@@ -135,8 +140,11 @@ export class PostsRepositoryImpl implements PostsRepository {
           (postData: any) =>
             new PostsData(
               postData.postedBy,
+              postData.postedByName,
               postData.title,
               postData.body,
+              postData.reactionsCount,
+              postData.commentsCount,
               new Date(postData.createdAt),
               postData.likes,
               postData.comments,
@@ -217,10 +225,13 @@ export class PostsRepositoryImpl implements PostsRepository {
           (postData: any) =>
             new PostsData(
               postData.postedBy,
+              postData.postedByName,
               postData.title,
               postData.body,
+              postData.reactionsCount,
+              postData.commentsCount,
               new Date(postData.createdAt),
-              postData.likes,
+              postData.reactions,
               postData.comments,
               postData._id
             )
@@ -239,6 +250,60 @@ export class PostsRepositoryImpl implements PostsRepository {
       errorResponse = {
         statusCode: 500,
         errorMessage: `An error occurred while retrieving posts: ${e}`,
+      };
+      return makeLeft(errorResponse);
+    }
+  }
+
+  async editPost(
+    postId: ObjectId,
+    editByUser: ObjectId,
+    postData: PostsDto
+  ): Promise<Either<ErrorResponse, string>> {
+    const postcollection: Collection<PostsData> = this.db.collection("Posts");
+    let errorResponse: ErrorResponse;
+    try {
+      const isValidUser = await this.userCollection.findOne({
+        _id: new ObjectId(editByUser),
+      });
+      if (!isValidUser) {
+        errorResponse = {
+          statusCode: 403,
+          errorMessage: "Not a valid user",
+        };
+        return makeLeft(errorResponse);
+      }
+      const post = await postcollection.findOne({ _id: new ObjectId(postId) });
+
+      const isAuthorizedToEdit = new ObjectId(post?.postedBy).equals(
+        new ObjectId(editByUser)
+      );
+
+      if (!isAuthorizedToEdit) {
+        errorResponse = {
+          statusCode: 401,
+          errorMessage: "Not Authorized",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      const updateQuery = {
+        $set: {
+          [`title`]: postData.title,
+          [`body`]: postData.body,
+        },
+      };
+
+      await postcollection.updateOne(
+        { _id: new ObjectId(postId) },
+        updateQuery
+      );
+
+      return makeRight("Post updated successfully");
+    } catch (e) {
+      errorResponse = {
+        statusCode: 500,
+        errorMessage: e?.toString() ?? "An error occurred",
       };
       return makeLeft(errorResponse);
     }
@@ -273,11 +338,164 @@ export class PostsRepositoryImpl implements PostsRepository {
         { $push: { commentsList: commentData } }
       );
 
+      // adding a comment count
+      await postcollection.updateOne(
+        {
+          _id: new ObjectId(commentToPost),
+        },
+        { $set: { commentsCount: (post?.commentsCount ?? 0) + 1 } }
+      );
+
       return makeRight("Comment Posted");
     } catch (e) {
       errorResponse = {
         statusCode: 500,
         errorMessage: `Failed to make a comment : ${e}`,
+      };
+      return makeLeft(errorResponse);
+    }
+  }
+
+  async deleteComment(
+    commentId: ObjectId,
+    commentIdOnList: ObjectId,
+    deleteByUser: ObjectId
+  ): Promise<Either<ErrorResponse, string>> {
+    const commentsCollection: Collection<CommentsDto> =
+      this.db.collection("Comments");
+    const postCollection: Collection<PostsData> = this.db.collection("Posts");
+    try {
+      const commentData = await commentsCollection.findOne({
+        _id: new ObjectId(commentId),
+      });
+
+      if (!commentData) {
+        const errorResponse: ErrorResponse = {
+          statusCode: 404,
+          errorMessage: "Comment not found",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Find the index of the specific comment within the list
+      const existingCommentIndex = commentData.commentsList.findIndex(
+        (comment) => comment._id.equals(new ObjectId(commentIdOnList))
+      );
+
+      if (existingCommentIndex === -1) {
+        const errorResponse: ErrorResponse = {
+          statusCode: 404,
+          errorMessage: "Comment not found in list",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      const comment = commentData.commentsList[existingCommentIndex];
+
+      const validUserToDelete = new ObjectId(deleteByUser).equals(
+        new ObjectId(comment.commentBy)
+      );
+
+      if (!validUserToDelete) {
+        const errorResponse: ErrorResponse = {
+          statusCode: 401,
+          errorMessage: "Not Authorized",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Remove the comment
+      commentData.commentsList.splice(existingCommentIndex, 1);
+
+      await commentsCollection.updateOne(
+        { _id: new ObjectId(commentId) },
+        { $set: { commentsList: commentData.commentsList } }
+      );
+
+      // Update the post to decrement the comments count
+      await postCollection.updateOne(
+        { comments: new ObjectId(commentId) },
+        { $inc: { commentsCount: -1 } } // Decrement the comments count
+      );
+
+      return makeRight("Comment deleted");
+    } catch (e) {
+      const errorResponse: ErrorResponse = {
+        statusCode: 500,
+        errorMessage: e?.toString() ?? "An error occurred",
+      };
+      return makeLeft(errorResponse);
+    }
+  }
+
+  async editComment(
+    commentId: ObjectId,
+    editByUser: ObjectId,
+    updatedCommentData: CommentDto
+  ): Promise<Either<ErrorResponse, string>> {
+    const collection: Collection<CommentsDto> = this.db.collection("Comments");
+    let errorResponse: ErrorResponse;
+    try {
+      // Find the document containing the comment list
+      const commentData = await collection.findOne({
+        _id: new ObjectId(commentId),
+        // "commentsList._id": updatedCommentData._id,
+      });
+
+      if (!commentData) {
+        errorResponse = {
+          statusCode: 404,
+          errorMessage: "Comment not found",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Find the index of the specific comment within the list
+      const existingCommentIndex = commentData.commentsList.findIndex(
+        (comment) => comment._id.equals(new ObjectId(updatedCommentData._id))
+      );
+
+      if (existingCommentIndex === -1) {
+        errorResponse = {
+          statusCode: 404,
+          errorMessage: "Comment not found in list",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      const comment = commentData.commentsList[existingCommentIndex];
+
+      const validUserToEdit = new ObjectId(editByUser).equals(
+        new ObjectId(comment.commentBy)
+      );
+
+      if (!validUserToEdit) {
+        errorResponse = {
+          statusCode: 401,
+          errorMessage: "Not Authorized",
+        };
+        return makeLeft(errorResponse);
+      }
+
+      // Update the specific comment within the list
+      const updateQuery = {
+        $set: {
+          [`commentsList.${existingCommentIndex}.commentBy`]:
+            updatedCommentData.commentBy,
+          [`commentsList.${existingCommentIndex}.name`]:
+            updatedCommentData.name,
+          [`commentsList.${existingCommentIndex}.comment`]:
+            updatedCommentData.comment,
+        },
+      };
+
+      await collection.updateOne({ _id: new ObjectId(commentId) }, updateQuery);
+
+      return makeRight("Comment updated successfully");
+    } catch (e) {
+      errorResponse = {
+        statusCode: 500,
+        errorMessage: e?.toString() ?? "An error occurred",
       };
       return makeLeft(errorResponse);
     }
@@ -326,7 +544,8 @@ export class PostsRepositoryImpl implements PostsRepository {
         // No reaction document exists, create a new one with the new reaction
         await reactionCollection.updateOne(
           { _id: new ObjectId(post.reactions) },
-          { $push: { reactionsList: reactionData } }
+          { $push: { reactionsList: reactionData } },
+          { upsert: true } // Ensure document is created if it doesn't exist
         );
       } else {
         // Check if the user has already reacted
@@ -335,13 +554,37 @@ export class PostsRepositoryImpl implements PostsRepository {
         );
 
         if (existingReactionIndex > -1) {
-          // Update the existing reaction
-          reactionDoc.reactionsList[existingReactionIndex].reactionType =
-            reactionData.reactionType;
-          reactionDoc.reactionsList[existingReactionIndex].reactOn = new Date();
+          // Get the existing reaction type
+          const existingReactionType =
+            reactionDoc.reactionsList[existingReactionIndex].reactionType;
+
+          if (existingReactionType === reactionData.reactionType) {
+            // If reaction types match, remove the reaction
+            reactionDoc.reactionsList.splice(existingReactionIndex, 1);
+
+            // Update the post to decrement the reaction count
+            await postCollection.updateOne(
+              { _id: new ObjectId(reactToPost) },
+              { $inc: { reactionsCount: -1 } } // Decrement the reaction count
+            );
+          } else {
+            // Otherwise, update the reaction type and date
+            reactionDoc.reactionsList[existingReactionIndex].reactionType =
+              reactionData.reactionType;
+            reactionDoc.reactionsList[existingReactionIndex].reactOn =
+              new Date();
+          }
         } else {
-          // Add a new reaction
+          // Add a new reaction if the user hasn't reacted yet
           reactionDoc.reactionsList.push(reactionData);
+
+          // Adding a reaction count
+          await postCollection.updateOne(
+            {
+              _id: new ObjectId(reactToPost),
+            },
+            { $set: { reactionsCount: (post?.reactionsCount ?? 0) + 1 } }
+          );
         }
 
         // Update the reactions document
@@ -355,7 +598,7 @@ export class PostsRepositoryImpl implements PostsRepository {
     } catch (e) {
       errorResponse = {
         statusCode: 500,
-        errorMessage: `Failed to add a reaction : ${e}`,
+        errorMessage: `Failed to add a reaction: ${e}`,
       };
       return makeLeft(errorResponse);
     }
